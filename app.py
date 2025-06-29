@@ -204,7 +204,7 @@ def suggest_reorder_quantity_from_ai(product_id):
     )
 
 #as of now we arent taking this protoype to a production level so i believe its okay to hardcode the api key here or else we could have stored it in env variable
-    client = Together(api_key="b2f7ed331ce942ac3ea07770028567119033ff1151df0fc623ef022a580b2c96")
+    client = Together("b2f7ed331ce942ac3ea07770028567119033ff1151df0fc623ef022a580b2c96")
     try:
         response = client.chat.completions.create(
             model="meta-llama/Llama-3.3-70B-Instruct-Turbo-Free", # Specified model
