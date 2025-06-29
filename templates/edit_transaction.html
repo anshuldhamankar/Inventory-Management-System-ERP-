@@ -1,0 +1,53 @@
+<!-- templates/edit_transaction.html -->
+{% extends 'base.html' %}
+{% block title %}Edit Transaction - ERP Lite{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">✏️ Edit Transaction #{{ transaction.id }}</h2>
+
+  <div class="card mb-4">
+    <div class="card-header">Edit Transaction Details</div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('edit_transaction', transaction_id=transaction.id) }}">
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <label for="product_id" class="form-label">Product</label>
+            <select name="product_id" id="product_id" class="form-select" required>
+              <option value="">-- Select Product --</option>
+              {% for product in products %}
+              <option value="{{ product.id }}" {% if product.id == transaction.product_id %}selected{% endif %}>{{ product.name }} (Current Stock: {{ product.stock_quantity }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="type" class="form-label">Type</label>
+            <select name="type" id="type" class="form-select" required>
+              <option value="purchase" {% if transaction.type == 'purchase' %}selected{% endif %}>Purchase</option>
+              <option value="sale" {% if transaction.type == 'sale' %}selected{% endif %}>Sale</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="quantity" class="form-label">Quantity</label>
+            <input type="number" class="form-control" id="quantity" name="quantity" value="{{ transaction.quantity }}" required min="1" />
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="unit_price" class="form-label">Unit Price (₹)</label>
+            <input type="number" class="form-control" name="unit_price" value="{{ transaction.unit_price }}" step="0.01" required />
+          </div>
+          <div class="col-md-6">
+            <label for="date" class="form-label">Date</label>
+            <input type="date" class="form-control" name="date" value="{{ current_date }}" required />
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Update Transaction</button>
+        <a href="{{ url_for('transactions') }}" class="btn btn-secondary">Cancel</a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

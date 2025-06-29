@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - ERP Lite{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">📊 Dashboard Overview</h2>
+
+  <!-- Summary Cards -->
+  <div class="row mb-4">
+
+    <div class="col-md-3">
+      <div class="card text-bg-primary">
+        <div class="card-body">
+          <h5 class="card-title">Total Products</h5>
+          <p class="card-text display-6">{{ total_products }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card text-bg-success">
+        <div class="card-body">
+          <h5 class="card-title">Total Stock Value (₹)</h5>
+          <p class="card-text display-6">₹ {{ total_value }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card text-bg-danger">
+        <div class="card-body">
+          <h5 class="card-title">Low Stock Products</h5>
+          <p class="card-text display-6">{{ low_stock_count }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card text-bg-secondary">
+        <div class="card-body">
+          <h5 class="card-title">Total Transactions</h5>
+          <p class="card-text display-6">{{ total_transactions }}</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Low Stock Product Table -->
+  <div class="card">
+    <div class="card-header bg-warning">
+      ⚠️ Products Running Low on Stock
+    </div>
+    <div class="card-body table-responsive">
+      <table class="table table-bordered table-hover">
+        <thead class="table-dark">
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>SKU</th>
+            <th>Stock</th>
+            <th>Supplier</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for product in low_stock_products %}
+          <tr class="{% if product.stock_quantity == 0 %}table-danger{% else %}table-warning{% endif %}">
+            <td>{{ product.id }}</td>
+            <td>{{ product.name }}</td>
+            <td>{{ product.sku }}</td>
+            <td>{{ product.stock_quantity }}</td>
+            <td>{{ product.supplier_name }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

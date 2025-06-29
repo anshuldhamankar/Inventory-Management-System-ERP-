@@ -1,0 +1,174 @@
+<!-- templates/products.html -->
+{% extends 'base.html' %}
+{% block title %}Products - ERP Lite{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">📦 Products</h2>
+
+  <!-- Add Product Form -->
+  <div class="card mb-4">
+    <div class="card-header">Add New Product</div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('add_product') }}">
+        <div class="row mb-3">
+          <div class="col">
+            <label for="name" class="form-label">Product Name</label>
+            <input type="text" class="form-control" id="name" name="name" required />
+          </div>
+          <div class="col">
+            <label for="sku" class="form-label">SKU</label>
+            <input type="text" class="form-control" id="sku" name="sku" required />
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col">
+            <label for="unit_price" class="form-label">Unit Price (₹)</label>
+            <input type="number" step="0.01" class="form-control" id="unit_price" name="unit_price" required />
+          </div>
+          <div class="col">
+            <label for="stock_quantity" class="form-label">Stock Quantity</label>
+            <input type="number" class="form-control" id="stock_quantity" name="stock_quantity" required />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="supplier_id" class="form-label">Supplier</label>
+          <select class="form-select" name="supplier_id" id="supplier_id" required>
+            <option value="">-- Select Supplier --</option>
+            {% for supplier in suppliers %}
+              <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Add Product</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Products Table -->
+  <div class="card">
+    <div class="card-header">All Products</div>
+    <div class="card-body table-responsive">
+      <table class="table table-bordered table-hover align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>SKU</th>
+            <th>Price (₹)</th>
+            <th>Stock</th>
+            <th>Supplier</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for product in products %}
+          <tr>
+            <td>{{ product.id }}</td>
+            <td>{{ product.name }}</td>
+            <td>{{ product.sku }}</td>
+            <td>{{ product.unit_price }}</td>
+            <td>{{ product.stock_quantity }}</td>
+            <td>{{ product.supplier_name }}</td>
+            <td>{{ product.created_at.strftime('%Y-%m-%d') }}</td>
+            <td>
+              <a href="{{ url_for('edit_product', product_id=product.id) }}" class="btn btn-sm btn-warning">Edit</a>
+              <form method="POST" action="{{ url_for('delete_product', product_id=product.id) }}" style="display:inline;">
+                <button class="btn btn-sm btn-danger" onclick="return confirm('Delete this product?')">Delete</button>
+              </form>
+              <button class="btn btn-sm btn-info suggest-reorder-btn mt-1" data-product-id="{{ product.id }}">Suggest Reorder</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- AI Reorder Suggestion Modal -->
+<div class="modal fade" id="reorderSuggestionModal" tabindex="-1" aria-labelledby="reorderSuggestionModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="reorderSuggestionModalLabel">AI Reorder Suggestion</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Product:</strong> <span id="modalProductName"></span></p>
+        <p><strong>Current Stock:</strong> <span id="modalCurrentStock"></span></p>
+        <p><strong>Suggested Quantity:</strong> <span id="modalReorderQuantity" class="fw-bold fs-4 text-success"></span></p>
+        <p><strong>Reasoning:</strong> <span id="modalReasoning"></span></p>
+        <div id="modalLoading" class="text-center d-none">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p>Fetching AI suggestion...</p>
+        </div>
+        <div id="modalError" class="alert alert-danger d-none mt-3"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }} {# Keeps existing scripts from base.html #}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const reorderButtons = document.querySelectorAll('.suggest-reorder-btn');
+    const reorderModal = new bootstrap.Modal(document.getElementById('reorderSuggestionModal'));
+    const modalProductName = document.getElementById('modalProductName');
+    const modalCurrentStock = document.getElementById('modalCurrentStock'); // Added for current stock
+    const modalReorderQuantity = document.getElementById('modalReorderQuantity');
+    const modalReasoning = document.getElementById('modalReasoning');
+    const modalLoading = document.getElementById('modalLoading');
+    const modalError = document.getElementById('modalError');
+
+    reorderButtons.forEach(button => {
+      button.addEventListener('click', async function() {
+        const productId = this.dataset.productId;
+        // Get product name and current stock from the table row for display in modal
+        const row = this.closest('tr');
+        const productName = row.children[1].textContent; // Second column is Name
+        const currentStock = row.children[4].textContent; // Fifth column is Stock
+
+        modalProductName.textContent = productName;
+        modalCurrentStock.textContent = currentStock; // Display current stock
+        modalReorderQuantity.textContent = '';
+        modalReasoning.textContent = '';
+        modalError.classList.add('d-none'); // Hide any previous errors
+        modalLoading.classList.remove('d-none'); // Show loading spinner
+        reorderModal.show();
+
+        try {
+          const response = await fetch(`/api/suggest_reorder/${productId}`);
+          const data = await response.json();
+
+          modalLoading.classList.add('d-none'); // Hide loading spinner
+
+          if (response.ok) {
+            modalReorderQuantity.textContent = data.reorder_quantity;
+            modalReasoning.textContent = data.reasoning;
+          } else {
+            modalError.textContent = data.error || 'An unknown error occurred.';
+            modalError.classList.remove('d-none');
+          }
+        } catch (error) {
+          modalLoading.classList.add('d-none'); // Hide loading spinner
+          modalError.textContent = 'Failed to connect to the AI service. Please check your network or API configuration.';
+          modalError.classList.remove('d-none');
+          console.error('Fetch error:', error);
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}

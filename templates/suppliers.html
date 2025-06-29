@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Suppliers - ERP Lite{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">🏭 Suppliers</h2>
+
+  <!-- Add Supplier Form -->
+  <div class="card mb-4">
+    <div class="card-header">Add New Supplier</div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('add_supplier') }}">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="name" class="form-label">Supplier Name</label>
+            <input type="text" class="form-control" id="name" name="name" required />
+          </div>
+          <div class="col-md-6">
+            <label for="contact_email" class="form-label">Contact Email</label>
+            <input type="email" class="form-control" id="contact_email" name="contact_email" />
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Add Supplier</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Suppliers Table -->
+  <div class="card">
+    <div class="card-header">All Suppliers</div>
+    <div class="card-body table-responsive">
+      <table class="table table-hover table-bordered">
+        <thead class="table-dark">
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Products Supplied</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for supplier in suppliers %}
+          <tr>
+            <td>{{ supplier.id }}</td>
+            <td>{{ supplier.name }}</td>
+            <td>{{ supplier.contact_email or '—' }}</td>
+            <td>{{ supplier.product_count }}</td>
+            <td>
+              {% if supplier.product_count == 0 %}
+              <form method="POST" action="{{ url_for('delete_supplier', supplier_id=supplier.id) }}" style="display:inline;">
+                <button class="btn btn-sm btn-danger" onclick="return confirm('Delete this supplier?')">Delete</button>
+              </form>
+              {% else %}
+              <span class="text-muted">In use</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
