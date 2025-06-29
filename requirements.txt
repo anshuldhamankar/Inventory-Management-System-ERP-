@@ -1,0 +1,3 @@
+Flask==3.0.3
+together==0.2.10
+gunicorn==22.0.0
